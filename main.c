@@ -1,37 +1,68 @@
+#include <stdio.h>  // wiadomo po co
+#include <stdlib.h> 
+#include <string.h> // strstr
+
 #include "skorowidz.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#define BUFSIZE 8192   // zakładamy, że linie będą krótsze niż 8kB
 
-void nowe_slowo(char *slow, slowo_t * res){
-	res->slowo = slow;
-	res->liczba_linii=0;
-	res->linie = NULL;
-}
+int
+main( int argc, char **argv ) {
+    int i;
+    char buf[BUFSIZE];
+	slowo_t skorowidz[argc-2];
+	FILE *in= argc > 1 ? fopen( argv[1], "r" ) : stdin;
 
-int dodaj_linie(slowo_t *slowo, int numer){
-	slowo->liczba_linii++;
-	int *temp = realloc(slowo->linie, slowo->liczba_linii * sizeof(int*));
-	if( temp != NULL){
-		slowo->linie = temp;
-		slowo->linie[slowo->liczba_linii-1]=numer;
-		return 1;
+   	int tmp;
+    for( i= 2; i < argc; i++ ) {
+		tmp=i;
+		nowe_slowo(argv[i], &skorowidz[tmp-2]);
 	}
-	else return 0;
-}
-
-void wypisz_skorowidz(slowo_t sk[], int rozmiar){
-	int i = 0;
-	int j = 0;
-	for(i = 0; i<rozmiar; i++){
-		if ( sk[i].liczba_linii > 0){
-			printf( "słowo \"%s\" wystąpiło w liniach:", sk[i].slowo );
-			for(j = 0; j < sk[i].liczba_linii; j++)
-				printf( " %d", sk[i].linie[j]);
-			printf( "\n");
-		}
-		else{
-			printf("nie napotkano słowa \"%s\"\n", sk[i].slowo);
-		}
+	if( argc-2==0 ) {
+		fprintf( stderr, "%s: błąd: proszę podać słowa do wyszukiwania\n", argv[0] );
+		return EXIT_FAILURE;
 	}
+
+	if( in == NULL ) {
+		fprintf( stderr, "%s: błąd: nie mogę czytać pliku %s\n", argv[0], argv[1] );
+		return EXIT_FAILURE;
+	}
+	int nr_linii = 0;
+	char * slowo_z_bufa;
+	char * delim =" ";
+	char buf2[BUFSIZE] = "";
+	int jest = 0;
+	while( fgets( buf, BUFSIZE, in ) != NULL ) {
+		nr_linii++;
+		jest = 0;
+		buf[strlen(buf)-1]='\0';
+		for( i= 0; i < argc-2; i++ ){
+			strcpy(buf2, buf);
+			slowo_z_bufa=strtok(buf2, delim);
+			
+			if( strcmp(slowo_z_bufa, skorowidz[i].slowo) == 0) {
+					jest =1;	
+				}
+			while (slowo_z_bufa != NULL)
+			{	
+				if( strcmp(slowo_z_bufa, skorowidz[i].slowo) == 0) {
+					jest =1;
+				}
+				slowo_z_bufa = strtok(NULL, delim) ;
+
+			}
+			if(slowo_z_bufa!=NULL) printf("%s ", slowo_z_bufa);
+			if (jest == 1){
+				if(dodaj_linie(&skorowidz[i], nr_linii)==0){
+						fprintf(stderr, "Nie można reallocować pamięci \n");
+					}
+			}
+			jest=0;
+		}
+		memset(buf2,0,sizeof(buf2));
+	}
+
+	wypisz_skorowidz(skorowidz, argc-2);
+	
+	return EXIT_SUCCESS;
 }
