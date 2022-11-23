@@ -1,44 +1,37 @@
-#include <stdio.h>  // wiadomo po co
-#include <stdlib.h> 
-#include <string.h> // strstr
-
 #include "skorowidz.h"
 
-#define BUFSIZE 8192   // zakładamy, że linie będą krótsze niż 8kB
+#include <stdio.h>
+#include <stdlib.h>
 
-int
-main( int argc, char **argv ) {
-    int i;
-    char buf[BUFSIZE];
-	slowo_t *skorowidz[argc-2];
-	FILE *in= argc > 1 ? fopen( argv[1], "r" ) : stdin;
+void nowe_slowo(char *slow, slowo_t * res){
+	res->slowo = slow;
+	res->liczba_linii=0;
+	res->linie = NULL;
+}
 
-   	int tmp;
-    for( i= 2; i < argc; i++ ) {
-		tmp=i;
-		skorowidz[tmp-2]=nowe_slowo(argv[i]);
+int dodaj_linie(slowo_t *slowo, int numer){
+	slowo->liczba_linii++;
+	int *temp = realloc(slowo->linie, slowo->liczba_linii * sizeof(int*));
+	if( temp != NULL){
+		slowo->linie = temp;
+		slowo->linie[slowo->liczba_linii-1]=numer;
+		return 1;
 	}
-	if( argc-2==0 ) {
-		fprintf( stderr, "%s: błąd: proszę podać słowa do wyszukiwania\n", argv[0] );
-		return EXIT_FAILURE;
-	}
+	else return 0;
+}
 
-	if( in == NULL ) {
-		fprintf( stderr, "%s: błąd: nie mogę czytać pliku %s\n", argv[0], argv[1] );
-		return EXIT_FAILURE;
+void wypisz_skorowidz(slowo_t sk[], int rozmiar){
+	int i = 0;
+	int j = 0;
+	for(i = 0; i<rozmiar; i++){
+		if ( sk[i].liczba_linii > 0){
+			printf( "słowo \"%s\" wystąpiło w liniach:", sk[i].slowo );
+			for(j = 0; j < sk[i].liczba_linii; j++)
+				printf( " %d", sk[i].linie[j]);
+			printf( "\n");
+		}
+		else{
+			printf("nie napotkano słowa \"%s\"\n", sk[i].slowo);
+		}
 	}
-	int nr_linii = 0;
-	while( fgets( buf, BUFSIZE, in ) != NULL ) {
-		nr_linii++;
-		for( i= 0; i < argc-2; i++ )
-			if( strstr( buf, skorowidz[i]->slowo ) != NULL ) {
-				if(dodaj_linie(skorowidz[i], nr_linii)==0){
-					fprintf(stderr, "Nie można reallocować pamięci");
-				}
-			}
-	}
-
-	wypisz_skorowidz(skorowidz, argc-2);
-	
-	return EXIT_SUCCESS;
 }
