@@ -7,10 +7,10 @@ typedef struct{
 	int * linie;
 } slowo_t;
 
-slowo_t * nowe_slowo(char *slow);
+void nowe_slowo(char *slow, slowo_t * res);
 
 int dodaj_linie(slowo_t *slowo, int numer);
 
-void wypisz_skorowidz(slowo_t * sk[], int rozmiar);
+void wypisz_skorowidz(slowo_t sk[], int rozmiar);
 
 #endif
